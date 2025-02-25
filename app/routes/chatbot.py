@@ -46,7 +46,7 @@ async def chat(request: ChatRequest):
 
         # Generate response with GPT-4All
         with gpt4all_model.chat_session():
-            reply = gpt4all_model.generate(prompt, max_tokens=500)
+            reply = gpt4all_model.generate(prompt, max_tokens=800)
 
         # Prevent duplicate storage
         if request.message not in past_conversations["documents"]:
