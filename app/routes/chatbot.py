@@ -7,12 +7,18 @@ from gpt4all import GPT4All
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 
-# Load the GPT-4All model
-MODEL_PATH = "models/mistral-7b.Q4_K_M.gguf"  # Update this based on your model
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Please download it.")
+# Define model path
+MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 
-gpt4all_model = GPT4All(MODEL_PATH)
+# Check if the model exists
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Please download it and place it in the correct directory.")
+
+# Initialize GPT-4All model
+try:
+    gpt4all_model = GPT4All(MODEL_PATH)
+except Exception as e:
+    raise RuntimeError(f"Failed to load GPT-4All model: {e}")
 
 class ChatRequest(BaseModel):
     user_id: int
@@ -25,13 +31,21 @@ async def chat(request: ChatRequest):
         past_conversations = memory.get_memory(request.user_id)
         context = " ".join(past_conversations["documents"]) if past_conversations else ""
 
-        # Generate response using GPT-4All
+        # Construct prompt
         prompt = f"Context: {context}\nUser: {request.message}\nAI:"
-        reply = gpt4all_model.generate(prompt, max_tokens=200)
+
+        # Generate response with GPT-4All
+        with gpt4all_model.chat_session():  # Ensures efficient execution
+            reply = gpt4all_model.generate(prompt, max_tokens=200)
 
         # Store message in memory
         memory.store_message(request.user_id, request.message, reply)
 
         return {"reply": reply}
+
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=f"Model error: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
