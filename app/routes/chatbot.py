@@ -7,8 +7,12 @@ from gpt4all import GPT4All
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
 
-# Define model path
-MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+# Get the absolute path to the models directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current script directory
+MODEL_PATH = os.path.join(BASE_DIR, "../models/mistral-7b-instruct-v0.2.Q4_K_M.gguf")
+
+# Normalize the path for different OS
+MODEL_PATH = os.path.normpath(MODEL_PATH)
 
 # Check if the model exists
 if not os.path.exists(MODEL_PATH):
@@ -16,7 +20,7 @@ if not os.path.exists(MODEL_PATH):
 
 # Initialize GPT-4All model
 try:
-    gpt4all_model = GPT4All(MODEL_PATH)
+    gpt4all_model = GPT4All(MODEL_PATH, device="cpu") #ensure it runs on CPU not on GPU
 except Exception as e:
     raise RuntimeError(f"Failed to load GPT-4All model: {e}")
 
