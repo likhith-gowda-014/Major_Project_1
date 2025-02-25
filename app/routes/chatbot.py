@@ -20,7 +20,7 @@ if not os.path.exists(MODEL_PATH):
 
 # Initialize GPT-4All model
 try:
-    gpt4all_model = GPT4All(MODEL_PATH, device="cpu") #ensure it runs on CPU not on GPU
+    gpt4all_model = GPT4All(MODEL_PATH, device="cpu")  # Ensure it runs on CPU
 except Exception as e:
     raise RuntimeError(f"Failed to load GPT-4All model: {e}")
 
@@ -31,19 +31,26 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 async def chat(request: ChatRequest):
     try:
-        # Retrieve conversation memory
+        # Retrieve past messages safely
         past_conversations = memory.get_memory(request.user_id)
-        context = " ".join(past_conversations["documents"]) if past_conversations else ""
+        
+        # Ensure memory is structured correctly
+        if not past_conversations or "documents" not in past_conversations:
+            past_conversations = {"documents": []}
+
+        # Use only the last 5 messages to maintain context
+        context = " ".join(past_conversations["documents"][-5:])  # Limit past messages
 
         # Construct prompt
         prompt = f"Context: {context}\nUser: {request.message}\nAI:"
 
         # Generate response with GPT-4All
-        with gpt4all_model.chat_session():  # Ensures efficient execution
-            reply = gpt4all_model.generate(prompt, max_tokens=200)
+        with gpt4all_model.chat_session():
+            reply = gpt4all_model.generate(prompt, max_tokens=500)
 
-        # Store message in memory
-        memory.store_message(request.user_id, request.message, reply)
+        # Prevent duplicate storage
+        if request.message not in past_conversations["documents"]:
+            memory.store_message(request.user_id, request.message, reply)
 
         return {"reply": reply}
 
