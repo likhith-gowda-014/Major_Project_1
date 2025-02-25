@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+chromadb
+supabase
+websockets
+pydantic
+python-dotenv
+openai
+transformers
+torch
+opencv-python
+deepface
+mediapipe
+whisper
+coqui-ai-tts
