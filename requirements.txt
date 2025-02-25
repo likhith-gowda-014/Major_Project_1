@@ -13,3 +13,5 @@ deepface
 mediapipe
 whisper
 coqui-ai-tts
+
+#hola amigo from user
